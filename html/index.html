@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Timeline: September 11, 2001 Attacks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Visualization & Content Choices:
+        - Overall Timeline: HTML/JS dynamic list, filterable. Goal: Organize/Change. Interaction: Click to expand details, filter by category. Justification: Provides comprehensive overview and detailed exploration.
+        - Flight Summaries (AA11, UA175, AA77, UA93): HTML cards with key times (departure, hijack, impact), passenger/crew counts. Goal: Inform. Interaction: Link to main timeline events. Justification: Quick, comparable info for each flight.
+        - Casualty Statistics: Chart.js Bar Chart (by location/flight) or Big Numbers. Goal: Inform. Justification: Clear presentation of key impact figures. Canvas rendering.
+        - FAA/NORAD Response Delays: Chart.js Grouped Bar Chart or comparative timeline elements. Goal: Compare/Change. Justification: Visualize critical time gaps in response. Canvas rendering.
+        - WTC/Pentagon Event Timelines (impacts, collapses): HTML lists or simple timeline graphics. Goal: Change/Organize. Justification: Clear sequence of site-specific events.
+        - Leadership Actions: HTML table or timeline. Goal: Organize/Inform. Justification: Summarize key decisions.
+        - Textual Content: Summarized from report, placed in relevant sections with "read more" options for full detail. Goal: Inform. Interaction: Expandable sections. Justification: Manages information density.
+        - Diagrams (e.g., simplified communication flow): HTML/CSS (Tailwind) styled divs and borders. Goal: Organize. Justification: Visual representation within NO SVG constraint.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. All charts via Chart.js (Canvas). Diagrams via HTML/CSS. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #212529;
+            scroll-behavior: smooth;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: #005A9C; /* Primary Accent */
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav-link {
+            padding: 0.75rem 1rem;
+            transition: background-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #004080; /* Darker Primary Accent */
+        }
+        .section-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #6C757D; /* Secondary Accent */
+            color: #005A9C; /* Primary Accent */
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .timeline-event {
+            border-left: 3px solid #005A9C; /* Primary Accent */
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        .timeline-event::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #005A9C; /* Primary Accent */
+        }
+        .details-toggle {
+            color: #005A9C; /* Primary Accent */
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .details-content {
+            display: none;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background-color: #F8F9FA; /* Light background for details */
+            border-radius: 0.25rem;
+        }
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #005A9C; /* Primary Accent */
+        }
+        .kpi-label {
+            font-size: 0.9rem;
+            color: #6C757D; /* Secondary Accent */
+        }
+        .filter-button {
+            background-color: #6C757D;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .filter-button:hover, .filter-button.active {
+            background-color: #005A9C;
+        }
+        .critical-highlight {
+            color: #C82333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="sticky-nav">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center">
+                <div class="text-xl font-bold py-3">9/11 Interactive Timeline</div>
+                <div class="flex space-x-1">
+                    <a href="#overview" class="nav-link">Overview</a>
+                    <a href="#flights" class="nav-link">Flights</a>
+                    <a href="#locations" class="nav-link">Locations</a>
+                    <a href="#response" class="nav-link">Response</a>
+                    <a href="#full-timeline-section" class="nav-link">Full Timeline</a>
+                    <a href="#casualties" class="nav-link">Casualties</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto p-4 md:p-8">
+        <section id="overview" class="mb-12 card">
+            <h1 class="text-3xl font-bold mb-4 text-center text-005A9C">A Chronological Account of the September 11, 2001 Terrorist Attacks</h1>
+            <p class="text-lg mb-4">The events of September 11, 2001, constitute a pivotal moment in contemporary world history, marking a coordinated series of terrorist attacks by the Islamic terrorist group al-Qaeda against the United States. This interactive application provides a detailed, chronologically ordered exploration of the attacks, the immediate responses, and key decisions, drawing upon official records including the 9/11 Commission Report.</p>
+            <p class="text-md">Use the navigation above to explore thematic sections or scroll down to engage with the full chronological timeline. Click on events for more details. All times are presented in Eastern Daylight Time (EDT).</p>
+        </section>
+
+        <section id="flights" class="mb-12">
+            <h2 class="section-title">The Hijacked Flights</h2>
+            <p class="text-lg mb-6">Four commercial airliners were hijacked on the morning of September 11, 2001. This section provides an overview of each flight, their departures, and their tragic fates. The selection of these specific flights was calculated: early morning, transcontinental flights with large fuel loads to maximize destruction.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card" id="flight-aa11">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">American Airlines Flight 11</h3>
+                    <p><strong>Origin:</strong> Boston (BOS) <span class="mx-1">&rarr;</span> <strong>Destination:</strong> Los Angeles (LAX)</p>
+                    <p><strong>Aircraft:</strong> Boeing 767</p>
+                    <p><strong>Departure:</strong> 7:59 AM (Scheduled 7:45 AM)</p>
+                    <p><strong>Occupants:</strong> 81 Pax, 11 Crew, 5 Hijackers</p>
+                    <p class="critical-highlight"><strong>Impact:</strong> 8:46:40 AM - WTC North Tower</p>
+                    <p class="text-sm mt-2">Hijacking began around 8:14 AM. Key communications from Betty Ong and Amy Sweeney provided early details. Transponder turned off at 8:21 AM.</p>
+                    <button onclick="showFlightDetails('aa11')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-aa11" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="flight-ua175">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">United Airlines Flight 175</h3>
+                    <p><strong>Origin:</strong> Boston (BOS) <span class="mx-1">&rarr;</span> <strong>Destination:</strong> Los Angeles (LAX)</p>
+                    <p><strong>Aircraft:</strong> Boeing 767</p>
+                    <p><strong>Departure:</strong> 8:14 AM (Scheduled 8:00 AM)</p>
+                    <p><strong>Occupants:</strong> 56 Pax, 9 Crew, 5 Hijackers</p>
+                    <p class="critical-highlight"><strong>Impact:</strong> 9:03:11 AM - WTC South Tower</p>
+                    <p class="text-sm mt-2">Hijacking began between 8:42-8:46 AM. Transponder code changed but not turned off initially. Passenger calls provided critical information.</p>
+                    <button onclick="showFlightDetails('ua175')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-ua175" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="flight-aa77">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">American Airlines Flight 77</h3>
+                    <p><strong>Origin:</strong> Washington (IAD) <span class="mx-1">&rarr;</span> <strong>Destination:</strong> Los Angeles (LAX)</p>
+                    <p><strong>Aircraft:</strong> Boeing 757</p>
+                    <p><strong>Departure:</strong> 8:20 AM (Scheduled 8:10 AM)</p>
+                    <p><strong>Occupants:</strong> 58 Pax, 6 Crew, 5 Hijackers</p>
+                    <p class="critical-highlight"><strong>Impact:</strong> 9:37:46 AM - The Pentagon</p>
+                    <p class="text-sm mt-2">Hijacking began between 8:51-8:54 AM. Transponder turned off at 8:56 AM. Barbara Olson's calls to her husband were significant.</p>
+                    <button onclick="showFlightDetails('aa77')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-aa77" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="flight-ua93">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">United Airlines Flight 93</h3>
+                    <p><strong>Origin:</strong> Newark (EWR) <span class="mx-1">&rarr;</span> <strong>Destination:</strong> San Francisco (SFO)</p>
+                    <p><strong>Aircraft:</strong> Boeing 757</p>
+                    <p><strong>Departure:</strong> 8:42 AM (Scheduled 8:00 AM - Delayed)</p>
+                    <p><strong>Occupants:</strong> 37 Pax, 7 Crew, 4 Hijackers</p>
+                    <p class="critical-highlight"><strong>Crash:</strong> 10:03:11 AM - Shanksville, PA</p>
+                    <p class="text-sm mt-2">Delayed departure was critical. Hijacking began 9:28 AM. Passenger revolt prevented it from reaching its Washington D.C. target.</p>
+                    <button onclick="showFlightDetails('ua93')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-ua93" class="details-content">Loading details...</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="locations" class="mb-12">
+            <h2 class="section-title">The Attack Sites</h2>
+            <p class="text-lg mb-6">The attacks targeted iconic symbols of American economic and military power, as well as a presumed target in Washington D.C. that was thwarted. This section details the events at each major location.</p>
+            <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
+                 <div class="card" id="location-wtc">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">World Trade Center, New York City</h3>
+                    <p class="text-sm mb-4">The Twin Towers were symbols of global commerce. Their destruction resulted in the largest loss of life.</p>
+                    <ul class="list-disc list-inside space-y-1 mb-4">
+                        <li><strong>8:46:40 AM:</strong> AA11 impacts North Tower (1 WTC).</li>
+                        <li><strong>9:03:11 AM:</strong> UA175 impacts South Tower (2 WTC).</li>
+                        <li><strong>9:58:59 AM:</strong> South Tower collapses (after 56 mins).</li>
+                        <li><strong>10:28:25 AM:</strong> North Tower collapses (after 102 mins).</li>
+                        <li><strong>5:20:52 PM:</strong> 7 WTC collapses (due to fires from North Tower debris).</li>
+                    </ul>
+                    <p class="text-sm">Evacuation efforts were hampered by severed stairwells, communication breakdowns, and the sheer scale of the disaster. First responder heroism was extraordinary, but inter-agency coordination faced severe challenges.</p>
+                    <button onclick="showLocationDetails('wtc')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-wtc" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="location-pentagon">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">The Pentagon, Arlington, Virginia</h3>
+                    <p class="text-sm mb-4">The headquarters of the U.S. Department of Defense was struck by AA77.</p>
+                     <ul class="list-disc list-inside space-y-1 mb-4">
+                        <li><strong>9:37:46 AM:</strong> AA77 impacts western facade.</li>
+                        <li><strong>Approx. 10:15 AM:</strong> Section of E Ring above impact collapses.</li>
+                    </ul>
+                    <p class="text-sm">Renovations to the impacted section (Wedge 1) helped mitigate damage and casualties. Regional emergency response was generally effective due to prior planning and mutual aid agreements, though challenges existed.</p>
+                    <button onclick="showLocationDetails('pentagon')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-pentagon" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="location-shanksville">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Shanksville, Pennsylvania</h3>
+                    <p class="text-sm mb-4">UA93 crashed in a field after passengers and crew fought back against hijackers.</p>
+                    <ul class="list-disc list-inside space-y-1 mb-4">
+                         <li><strong>9:28 AM:</strong> Hijacking of UA93 begins.</li>
+                         <li><strong>9:57 AM:</strong> Passenger revolt commences.</li>
+                         <li><strong>10:03:11 AM:</strong> UA93 crashes.</li>
+                    </ul>
+                    <p class="text-sm">The flight's delay allowed passengers to learn of the other attacks via phone calls, leading to their heroic actions which likely saved the U.S. Capitol or White House.</p>
+                    <button onclick="showLocationDetails('shanksville')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-shanksville" class="details-content">Loading details...</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="response" class="mb-12">
+            <h2 class="section-title">National Response</h2>
+            <p class="text-lg mb-6">The attacks triggered an unprecedented national crisis response involving the FAA, NORAD, and the highest levels of U.S. leadership. This section examines key actions and challenges faced by these entities.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card" id="response-faa">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Federal Aviation Administration (FAA)</h3>
+                    <p class="text-sm mb-4">The FAA faced the immediate challenge of understanding and managing the unfolding attacks in the nation's airspace.</p>
+                    <ul class="list-disc list-inside space-y-1 mb-4">
+                        <li><strong>9:25 AM:</strong> National ground stop ordered.</li>
+                        <li><strong>Approx. 9:42-9:45 AM:</strong> Ben Sliney orders all airborne aircraft to land (SCATANA).</li>
+                        <li><strong>12:16 PM:</strong> U.S. airspace declared clear of commercial/private flights.</li>
+                    </ul>
+                    <p class="text-sm">Fragmented communication and decentralized structure initially hindered a unified response. The decision to ground all flights was historic and logistically complex but executed successfully.</p>
+                    <button onclick="showResponseDetails('faa')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-faa" class="details-content">Loading details...</div>
+                </div>
+                <div class="card" id="response-norad">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">North American Aerospace Defense Command (NORAD)</h3>
+                    <p class="text-sm mb-4">NORAD's response was hampered by outdated protocols and severe communication issues with the FAA.</p>
+                     <ul class="list-disc list-inside space-y-1 mb-4">
+                        <li><strong>8:37 AM:</strong> NEADS notified of AA11 hijack (first military notification).</li>
+                        <li><strong>8:52 AM:</strong> Otis F-15s airborne (6 mins after AA11 impact).</li>
+                        <li><strong>9:03 AM:</strong> NEADS notified of UA175 (at impact).</li>
+                        <li><strong>9:30 AM:</strong> Langley F-16s airborne (based on erroneous AA11 report).</li>
+                        <li><strong>10:07 AM:</strong> NEADS notified of UA93 (4 mins after crash).</li>
+                    </ul>
+                    <p class="text-sm">Shootdown authorization process was complex. Misinformation and delays critically impacted fighter response times for AA77.</p>
+                    <button onclick="showResponseDetails('norad')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-norad" class="details-content">Loading details...</div>
+                </div>
+                <div class="card md:col-span-2" id="response-leadership">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">White House & National Leadership</h3>
+                    <p class="text-sm mb-4">National leaders were dispersed and faced communication challenges while managing the crisis.</p>
+                    <ul class="list-disc list-inside space-y-1 mb-4">
+                        <li><strong>Approx. 9:05 AM:</strong> President Bush informed "America is under attack."</li>
+                        <li><strong>Approx. 9:36 AM:</strong> VP Cheney evacuated to PEOC.</li>
+                        <li><strong>10:10-10:15 AM:</strong> VP Cheney authorizes engagement of hostile aircraft.</li>
+                        <li><strong>10:18 AM:</strong> President Bush confirms shootdown authorization.</li>
+                        <li><strong>8:30 PM:</strong> President Bush addresses the nation from the Oval Office.</li>
+                    </ul>
+                    <p class="text-sm">The President was kept away from Washington D.C. for security reasons for most of the day. Crisis management involved coordination between the President (Air Force One, secure sites), VP Cheney (PEOC), and other key officials.</p>
+                    <button onclick="showResponseDetails('leadership')" class="details-toggle mt-2">Show More Details &rarr;</button>
+                    <div id="details-leadership" class="details-content">Loading details...</div>
+                </div>
+            </div>
+            <div class="card mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-center text-005A9C">FAA/NORAD Notification & Fighter Scramble Timeline Gaps</h3>
+                <p class="text-sm text-gray-600 mb-4 text-center">This chart illustrates the critical time differences between FAA notifying NORAD (NEADS) about a hijacked flight and NORAD fighters becoming airborne. For AA77 and UA93, fighters were not effectively scrambled or were notified too late for interception. Note: AA11 impacted before fighters were airborne. UA175 impacted as NEADS was notified.</p>
+                <div class="chart-container" style="height: 400px; max-height: 450px;">
+                    <canvas id="noradResponseChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="full-timeline-section" class="mb-12 card">
+            <h2 class="section-title">Full Interactive Timeline of Events</h2>
+            <p class="text-lg mb-4">Explore the detailed chronology of September 11, 2001. Use the filters to focus on specific aspects of the day's events. Click on an event's title to expand for more details.</p>
+            <div class="mb-4 flex flex-wrap">
+                <button class="filter-button active" onclick="filterTimeline('all', this)">All Events</button>
+                <button class="filter-button" onclick="filterTimeline('AA11', this)">AA11</button>
+                <button class="filter-button" onclick="filterTimeline('UA175', this)">UA175</button>
+                <button class="filter-button" onclick="filterTimeline('AA77', this)">AA77</button>
+                <button class="filter-button" onclick="filterTimeline('UA93', this)">UA93</button>
+                <button class="filter-button" onclick="filterTimeline('WTC', this)">WTC</button>
+                <button class="filter-button" onclick="filterTimeline('Pentagon', this)">Pentagon</button>
+                <button class="filter-button" onclick="filterTimeline('FAA', this)">FAA</button>
+                <button class="filter-button" onclick="filterTimeline('NORAD', this)">NORAD</button>
+                <button class="filter-button" onclick="filterTimeline('Leadership', this)">Leadership</button>
+            </div>
+            <div id="interactiveTimeline" class="space-y-4">
+                <p class="text-center text-gray-500">Loading timeline events...</p>
+            </div>
+        </section>
+
+        <section id="casualties" class="mb-12 card">
+            <h2 class="section-title">Casualties and Impact</h2>
+            <p class="text-lg mb-6">The September 11th attacks resulted in a devastating loss of life and profound long-term consequences. This section provides an overview of the human cost.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                <div class="p-4 bg-gray-100 rounded-lg">
+                    <div class="kpi-value">2,977</div>
+                    <div class="kpi-label">Total Victims Killed (excluding hijackers)</div>
+                </div>
+                <div class="p-4 bg-gray-100 rounded-lg">
+                    <div class="kpi-value">2,753</div>
+                    <div class="kpi-label">Victims in New York City</div>
+                </div>
+                <div class="p-4 bg-gray-100 rounded-lg">
+                    <div class="kpi-value">184</div>
+                    <div class="kpi-label">Victims at the Pentagon</div>
+                </div>
+                 <div class="p-4 bg-gray-100 rounded-lg md:col-start-2">
+                    <div class="kpi-value">40</div>
+                    <div class="kpi-label">Victims on Flight 93 (excluding hijackers)</div>
+                </div>
+            </div>
+             <p class="text-sm mb-4">The casualties included civilians from over 90 countries, hundreds of first responders (343 FDNY, 23 NYPD, 37 PAPD), and all passengers and crew on the four hijacked flights. The WTC complex was destroyed or severely damaged, and a section of the Pentagon suffered significant impact.</p>
+            <div class="chart-container" style="height: 350px; max-height: 400px;">
+                <canvas id="casualtiesByLocationChart"></canvas>
+            </div>
+            <p class="text-sm text-gray-600 mt-4 text-center">This chart illustrates the distribution of victim fatalities across the primary attack locations and Flight 93.</p>
+        </section>
+
+        <footer class="text-center text-sm text-gray-600 py-8 border-t border-gray-300">
+            <p>This interactive timeline is based on publicly available information, primarily the 9/11 Commission Report and other official records.</p>
+            <p>Created for informational and educational purposes.</p>
+        </footer>
+
+    </div>
+
+    <script>
+        const timelineData = [
+            { time: "5:41 AM", category: "Hijackers", title: "Atta & al-Omari Arrive in Portland", details: "Mohamed Atta (AA11) and Abdulaziz al-Omari arrive at Portland International Jetport, Maine, check in for flight to Boston." },
+            { time: "6:45 AM", category: "Hijackers", title: "Atta & al-Omari Arrive in Boston", details: "Atta and al-Omari arrive at Boston's Logan International Airport." },
+            { time: "7:40 AM", category: "Hijackers", title: "AA11 Hijackers Boarded", details: "All five hijackers are aboard American Airlines Flight 11." },
+            { time: "7:59 AM", category: "AA11", title: "AA11 Departs Boston", details: "American Airlines Flight 11 (Boeing 767) departs Boston for Los Angeles. 81 pax, 11 crew, 5 hijackers." },
+            { time: "8:14 AM", category: "AA11", title: "AA11 Hijacking Begins (Estimated)", details: "Pilots cease responding to Boston ARTCC. Hijackers, led by Mohamed Atta, gain control, injuring crew and murdering passenger Daniel Lewin." },
+            { time: "8:14 AM", category: "UA175", title: "UA175 Departs Boston", details: "United Airlines Flight 175 (Boeing 767) departs Boston for Los Angeles. 56 pax, 9 crew, 5 hijackers." },
+            { time: "8:19 AM", category: "AA11", title: "Flight Attendant Betty Ong Calls AA", details: "Betty Ong on AA11 reports hijacking, stabbings, mace/pepper spray, bomb claim, and cockpit breach." },
+            { time: "8:20 AM", category: "AA77", title: "AA77 Departs Washington Dulles", details: "American Airlines Flight 77 (Boeing 757) departs Washington Dulles for Los Angeles. 58 pax, 6 crew, 5 hijackers." },
+            { time: "8:21 AM", category: "AA11", title: "AA11 Transponder Turned Off", details: "Flight 11's transponder is turned off, degrading ATC information." },
+            { time: "8:24 AM", category: "AA11", title: "Atta's Accidental Transmissions to ATC", details: "Mohamed Atta makes several transmissions intended for passengers but broadcast to ATC, confirming hijacking by multiple perpetrators ('We have some planes')." },
+            { time: "8:37 AM", category: "AA11 NORAD", title: "Boston ARTCC Notifies NEADS of AA11 Hijack", details: "This is the first notification received by the U.S. military (NORAD's Northeast Air Defense Sector)." },
+            { time: "8:42 AM", category: "UA93", title: "UA93 Departs Newark (Delayed)", details: "United Airlines Flight 93 (Boeing 757) departs Newark for San Francisco after a 40+ minute delay. 37 pax, 7 crew, 4 hijackers." },
+            { time: "8:42-8:46 AM", category: "UA175", title: "UA175 Hijacking Begins", details: "Hijackers, led by Marwan al-Shehhi, seize control of UA175. Pilots killed." },
+            { time: "8:46 AM", category: "AA11 NORAD", title: "NORAD Orders F-15s Scramble for AA11", details: "Two F-15s from Otis ANGB, MA, ordered to scramble." },
+            { time: "8:46:40 AM", category: "AA11 WTC", title: "AA11 Impacts WTC North Tower (1 WTC)", details: "AA11 crashes into the north face of the North Tower (1 WTC), between floors 93-99. All 92 aboard killed, plus hundreds in the tower. All 3 stairwells severed." },
+            { time: "8:47 AM", category: "UA175", title: "UA175 Transponder Code Changes", details: "UA175's transponder code changes twice, alerting ATC but not turned off." },
+            { time: "8:51-8:54 AM", category: "AA77", title: "AA77 Hijacking Begins", details: "AA77 is hijacked. Last routine radio communication at 8:51 AM." },
+            { time: "8:52 AM", category: "AA11 NORAD", title: "Otis F-15s Airborne for AA11", details: "F-15s become airborne, 6 minutes after AA11 impact." },
+            { time: "8:52 AM", category: "UA175", title: "Passenger Peter Hanson Calls Father from UA175", details: "Reports hijacking, pilot deaths, flight attendant stabbing." },
+            { time: "8:54 AM", category: "AA77", title: "AA77 Deviates from Flight Path", details: "AA77 turns south from its assigned route." },
+            { time: "8:55 AM", category: "UA175 FAA", title: "FAA NY Center Aware of UA175 Hijack", details: "Controllers at New York Center become aware of the second hijacking." },
+            { time: "8:56 AM", category: "AA77", title: "AA77 Transponder Turned Off", details: "Indianapolis ARTCC loses AA77's radar signal." },
+            { time: "9:00 AM", category: "UA175", title: "Peter Hanson's Second Call from UA175", details: "'I think they intend to go to Chicago or someplace and fly into a building...'" },
+            { time: "9:01-9:02 AM", category: "FAA", title: "NY Center Manager to FAA Command", details: "'We have several situations... It's escalating big, big time... we need to get the military involved.'" },
+            { time: "9:03 AM", category: "UA175 NORAD", title: "NY Center Notifies NEADS of UA175", details: "Notification occurs virtually simultaneous with impact. No advance warning for NORAD." },
+            { time: "9:03:11 AM", category: "UA175 WTC", title: "UA175 Impacts WTC South Tower (2 WTC)", details: "UA175 crashes into the south face of the South Tower (2 WTC), between floors 77-85. All 65 aboard killed, plus hundreds in the tower. Televised live." },
+            { time: "9:05 AM", category: "FAA", title: "FAA NY Center Declares 'ATC Zero'", details: "Halts all departures, arrivals, and transits in its airspace." },
+            { time: "9:05 AM", category: "Leadership", title: "President Bush Informed of Second Impact", details: "At Emma E. Booker Elementary School, Chief of Staff Andrew Card informs President Bush, 'America is under attack.'" },
+            { time: "9:12 AM", category: "AA77", title: "Passenger Renee May Calls Mother from AA77", details: "Reports the hijacking of AA77." },
+            { time: "9:16-9:26 AM", category: "AA77", title: "Barbara Olson Calls Husband from AA77", details: "Passenger Barbara Olson makes two calls to U.S. Solicitor General Ted Olson, reporting hijackers with knives/box cutters." },
+            { time: "9:21 AM", category: "AA77 NORAD FAA", title: "FAA Erroneously Tells NEADS AA11 Still Airborne", details: "NEADS told AA11 (already crashed) is heading to DC. This critically misdirects response for AA77." },
+            { time: "9:24 AM", category: "AA77 NORAD", title: "Langley F-16s Ordered to Scramble", details: "Based on erroneous 'phantom Flight 11' report." },
+            { time: "9:25 AM", category: "FAA", title: "FAA Orders National Ground Stop", details: "Prevents all aircraft not yet departed from taking off." },
+            { time: "9:28 AM", category: "UA93", title: "UA93 Hijacking Begins", details: "Over eastern Ohio. Aircraft drops 700 feet. Cleveland ARTCC hears struggle, 'Mayday' call." },
+            { time: "9:30 AM", category: "AA77 NORAD", title: "Langley F-16s Airborne", details: "Initially misdirected eastward over the ocean due to false AA11 report." },
+            { time: "Approx. 9:30 AM", category: "Leadership", title: "President Bush Addresses Nation from School", details: "Calls events an 'apparent terrorist attack.'" },
+            { time: "9:32 AM", category: "UA93", title: "Hijacker Announcement on UA93", details: "Believed to be Ziad Jarrah: 'Ladies and Gentlemen: Here the captain... We have a bomb on board.'" },
+            { time: "9:34 AM", category: "AA77 NORAD FAA", title: "NEADS Learns AA77 is Missing", details: "By chance during a call with FAA Washington Center about the phantom AA11." },
+            { time: "Shortly before 9:36 AM", category: "Leadership", title: "VP Cheney Evacuated to PEOC", details: "Vice President Dick Cheney moved to the Presidential Emergency Operations Center at the White House." },
+            { time: "9:37:46 AM", category: "AA77 Pentagon", title: "AA77 Impacts The Pentagon", details: "AA77 crashes into the western side of the Pentagon in Arlington, VA. All 64 aboard killed, plus 125 in the building." },
+            { time: "9:39 AM", category: "UA93 FAA", title: "Second Hijacker Announcement on UA93", details: "Cleveland Center overhears reiteration of bomb, plane returning to airport for demands." },
+            { time: "9:41 AM", category: "UA93", title: "UA93 Transponder Turned Off", details: "Cleveland ARTCC continues to track on primary radar." },
+            { time: "Approx. 9:42-9:45 AM", category: "FAA", title: "FAA Orders All Aircraft to Land (SCATANA)", details: "National Operations Manager Ben Sliney makes historic decision to ground all ~4,500 airborne civilian/general aviation aircraft." },
+            { time: "9:55 AM", category: "Leadership", title: "President Bush Departs Florida Aboard Air Force One", details: "Headed for secure locations." },
+            { time: "9:57 AM", category: "UA93", title: "Passenger Revolt Begins on UA93", details: "Passengers and crew, aware of other attacks via phone calls, decide to fight back." },
+            { time: "9:58:59 AM", category: "WTC", title: "WTC South Tower (2 WTC) Collapses", details: "Collapses in approx. 10 seconds after burning for 56 minutes. All inside killed. Destroys FDNY ICP." },
+            { time: "10:00-10:01 AM", category: "UA93", title: "Hijackers on UA93 Realize Revolt", details: "CVR records hijackers discussing 'finishing it off' and 'pulling it down' as passengers assault cockpit." },
+            { time: "10:03:11 AM", category: "UA93", title: "UA93 Crashes in Shanksville, PA", details: "Hijackers deliberately crash the plane into a field as passengers nearly breach cockpit. All 44 aboard killed. Target believed to be in Washington D.C." },
+            { time: "10:07 AM", category: "UA93 NORAD FAA", title: "NEADS First Notified of UA93 Hijack", details: "Notification comes from Cleveland Center liaison, 4 minutes *after* the crash." },
+            { time: "10:10-10:15 AM", category: "Leadership NORAD", title: "VP Cheney Authorizes Engagement of Hostile Aircraft", details: "From PEOC, based on prior understanding with President Bush." },
+            { time: "Approx. 10:15 AM", category: "Pentagon", title: "Pentagon E Ring Section Collapses", details: "Section of E Ring above impact zone collapses, about 38 minutes after impact." },
+            { time: "10:18 AM", category: "Leadership NORAD", title: "President Bush Confirms Shootdown Authorization", details: "In call with VP Cheney from Air Force One." },
+            { time: "10:28:25 AM", category: "WTC", title: "WTC North Tower (1 WTC) Collapses", details: "Collapses after burning for 102 minutes. All remaining inside and many first responders killed. Debris strikes 7 WTC, igniting fires." },
+            { time: "10:53 AM", category: "Leadership NORAD", title: "Secretary Rumsfeld Orders DEFCON 3", details: "U.S. military defense readiness condition increased." },
+            { time: "11:45 AM", category: "Leadership", title: "President Bush Arrives at Barksdale AFB, LA", details: "Makes a statement around 12:30 PM." },
+            { time: "12:16 PM", category: "FAA", title: "U.S. Airspace Declared Clear", details: "All commercial and private flights grounded. Only military/emergency flights remain." },
+            { time: "2:50 PM", category: "Leadership", title: "President Bush Arrives at Offutt AFB, NE", details: "Holds National Security Council meeting via video conference." },
+            { time: "5:20:52 PM", category: "WTC", title: "7 World Trade Center (WTC 7) Collapses", details: "Collapses after burning for nearly 7 hours, primarily due to uncontrolled fires from WTC1 debris leading to structural failure." },
+            { time: "Approx. 7:00 PM", category: "Leadership", title: "President Bush Arrives Back at White House", details: "Returns to Washington D.C." },
+            { time: "8:30 PM", category: "Leadership", title: "President Bush Addresses the Nation from Oval Office", details: "Addresses the nation on the day's tragic events." }
+        ];
+
+        const flightDetailsData = {
+            aa11: `
+                <p><strong>Timeline:</strong> Departed Boston 7:59 AM. Hijacking began ~8:14 AM. Transponder off 8:21 AM. Atta's transmissions to ATC 8:24 AM. NEADS notified 8:37 AM. Impacted WTC North Tower 8:46:40 AM.</p>
+                <p><strong>Key Events:</strong> Flight attendants Betty Ong and Amy Sweeney made phone calls reporting the hijacking, stabbings, use of mace/pepper spray, and a bomb threat. Passenger Daniel Lewin is believed tobe the first fatality. Atta's accidental transmissions confirmed a hijacking by multiple perpetrators ("We have some planes"). The nine-minute interval between NEADS notification and impact was insufficient for interception.</p>
+                <p><strong>Occupants:</strong> 81 passengers, 11 crew, 5 hijackers. All 92 aboard killed.</p>
+            `,
+            ua175: `
+                <p><strong>Timeline:</strong> Departed Boston 8:14 AM. Hijacking began 8:42-8:46 AM. Transponder code changed (not off) ~8:47 AM. NEADS notified ~9:03 AM (at impact). Impacted WTC South Tower 9:03:11 AM.</p>
+                <p><strong>Key Events:</strong> Pilots killed during takeover. Passengers Peter Hanson and Brian Sweeney, and flight attendant Robert Fangman made calls. Hanson's call at 9:00 AM: "I think they intend to... fly into a building." The impact was televised live. NORAD had no advance warning for this flight.</p>
+                <p><strong>Occupants:</strong> 56 passengers, 9 crew, 5 hijackers. All 65 aboard killed.</p>
+            `,
+            aa77: `
+                <p><strong>Timeline:</strong> Departed Dulles 8:20 AM. Hijacking began 8:51-8:54 AM. Transponder off 8:56 AM. NEADS learned AA77 missing 9:34 AM. Impacted Pentagon 9:37:46 AM.</p>
+                <p><strong>Key Events:</strong> Passenger Barbara Olson made two calls to her husband, Solicitor General Ted Olson, reporting hijackers with knives/box cutters. FAA's awareness was confused; NEADS was erroneously told AA11 was still airborne heading to DC, misdirecting F-16s from Langley AFB. True status of AA77 known too late for interception.</p>
+                <p><strong>Occupants:</strong> 58 passengers, 6 crew, 5 hijackers. All 64 aboard killed.</p>
+            `,
+            ua93: `
+                <p><strong>Timeline:</strong> Departed Newark 8:42 AM (delayed). Hijacking began 9:28 AM. Transponder off 9:41 AM. Passenger revolt ~9:57 AM. Crashed Shanksville, PA 10:03:11 AM.</p>
+                <p><strong>Key Events:</strong> The 40+ minute departure delay was critical, allowing passengers to learn of other attacks via ~37 phone calls. They voted to fight back. CVR recorded sounds of the struggle and hijackers' decision to crash the plane. Believed target was U.S. Capitol or White House. NEADS notified after crash.</p>
+                <p><strong>Occupants:</strong> 37 passengers, 7 crew, 4 hijackers. All 44 aboard killed.</p>
+            `
+        };
+
+        const locationDetailsData = {
+            wtc: `
+                <p><strong>North Tower (1 WTC):</strong> Impacted by AA11 at 8:46:40 AM (floors 93-99). All 3 stairwells severed. Burned for 102 minutes. Collapsed at 10:28:25 AM.</p>
+                <p><strong>South Tower (2 WTC):</strong> Impacted by UA175 at 9:03:11 AM (floors 77-85). Stairwell A initially passable. Burned for 56 minutes. Collapsed at 9:58:59 AM.</p>
+                <p><strong>7 WTC:</strong> Struck by debris from 1 WTC collapse at 10:28 AM. Fires on multiple floors burned uncontrolled for nearly 7 hours. Collapsed at 5:20:52 PM due to fire-induced structural failure.</p>
+                <p><strong>Response Issues:</strong> Overwhelmed 911 system. FDNY radio communication failures (repeater system issues). Poor inter-agency coordination (FDNY, NYPD, PAPD). OEM EOC in 7 WTC had to be evacuated.</p>
+                <p><strong>Structural Failure:</strong> Aircraft impacts dislodged fireproofing. Jet-fuel fires heated exposed steel, causing trusses to sag and columns to buckle, leading to progressive collapse. NIST concluded towers likely wouldn't have collapsed from fire alone if fireproofing remained intact.</p>
+            `,
+            pentagon: `
+                <p><strong>Impact:</strong> AA77 struck western facade at 9:37:46 AM, penetrating three rings (E, D, C). Impact and jet fuel deflagration caused catastrophic damage and rapid fire spread.</p>
+                <p><strong>Collapse:</strong> Approx. 10:15 AM (38 mins post-impact), section of E Ring above impact zone collapsed. Structure held for crucial period allowing evacuations.</p>
+                <p><strong>Renovations (Wedge 1):</strong> Impacted section had structural reinforcements and blast-resistant windows, significantly mitigating damage and casualties.</p>
+                <p><strong>Response:</strong> Arlington County Fire Dept. (ACFD) led. Generally successful due to ICS adoption and regional mutual aid. Challenges: self-dispatching units, radio channel saturation. Command post moved multiple times due to false alarms of other inbound aircraft.</p>
+            `,
+            shanksville: `
+                <p><strong>Crash:</strong> UA93 crashed at 10:03:11 AM in Stonycreek Township, near Shanksville, PA, at ~580 mph.</p>
+                <p><strong>Passenger Revolt:</strong> Began ~9:57 AM. Passengers, informed by phone calls about WTC/Pentagon attacks, fought hijackers. CVR recorded sounds of struggle. Hijackers deliberately crashed plane as passengers neared cockpit.</p>
+                <p><strong>Thwarted Target:</strong> Believed to be U.S. Capitol or White House, approx. 20 mins flying time away. Actions of passengers and crew prevented further catastrophe.</p>
+            `
+        };
+
+        const responseDetailsData = {
+            faa: `
+                <p><strong>Key Actions:</strong>
+                    <ul>
+                        <li>8:37 AM: Boston ARTCC notifies NEADS of AA11.</li>
+                        <li>9:05 AM: NY Center declares "ATC zero".</li>
+                        <li>9:25 AM: National ground stop ordered.</li>
+                        <li>~9:42-9:45 AM: Ben Sliney orders all aircraft to land (SCATANA invoked). Over 4,500 aircraft grounded in ~2.5 hours.</li>
+                        <li>12:16 PM: U.S. airspace cleared of commercial/private flights.</li>
+                    </ul>
+                </p>
+                <p><strong>Challenges:</strong> Fragmented communication within FAA and with NORAD. Decentralized structure hindered unified real-time picture. Information known at one center not always immediately shared. Secretary of Transportation Norman Mineta was in PEOC with VP Cheney.</p>
+            `,
+            norad: `
+                <p><strong>Response Timeline & Issues:</strong>
+                    <ul>
+                        <li><strong>AA11:</strong> NEADS notified 8:37 AM. Otis F-15s scrambled 8:46 AM, airborne 8:52 AM (6 mins *after* impact).</li>
+                        <li><strong>UA175:</strong> NEADS notified 9:03 AM (at impact). Otis F-15s (for AA11) rerouted to NYC.</li>
+                        <li><strong>AA77:</strong> NEADS told at 9:21 AM that *AA11* was still airborne heading to DC. Langley F-16s scrambled 9:24 AM (airborne 9:30 AM) based on this false report, initially misdirected. NEADS learned AA77 missing at 9:34 AM, 3 mins before impact.</li>
+                        <li><strong>UA93:</strong> NEADS notified 10:07 AM (4 mins *after* crash).</li>
+                    </ul>
+                </p>
+                <p><strong>Shootdown Authorization:</strong> VP Cheney authorized engagement ~10:10-10:15 AM. President Bush confirmed 10:18 AM. Relayed to NORAD 10:31 AM. Confusion among NEADS commanders about passing explicit orders to pilots.</p>
+                <p><strong>Overall:</strong> Outdated protocols (Cold War external threats). Severe communication deficiencies with FAA. Largely reactive, significant information deficits.</p>
+            `,
+            leadership: `
+                <p><strong>President George W. Bush:</strong> At school in Sarasota, FL. Informed of first impact ~8:50 AM, second ~9:05 AM ("America is under attack"). Statement ~9:30 AM. Departed FL on Air Force One 9:55 AM. Flown to Barksdale AFB, LA (arr. 11:45 AM), then Offutt AFB, NE (arr. ~2:50 PM, NSC meeting). Returned to White House ~7:00 PM. Addressed nation 8:30 PM. Confirmed shootdown auth. 10:18 AM.</p>
+                <p><strong>Vice President Dick Cheney:</strong> At White House. Evacuated to PEOC before 9:36 AM. Central role in crisis management, communication with President, intelligence updates, key authorizations (incl. initial shootdown approval ~10:10-10:15 AM).</p>
+                <p><strong>Secretary of Defense Donald Rumsfeld:</strong> At Pentagon when struck 9:37 AM. Went to crash site. Joined NMCC before 10:30 AM. Ordered DEFCON 3 at 10:53 AM.</p>
+                <p><strong>National Security Advisor Condoleezza Rice:</strong> At White House. Spoke with President. Joined VP in PEOC for crisis management.</p>
+                <p><strong>Challenges:</strong> Physical dispersal of leadership, communication difficulties (poor connections, overloaded systems) complicated unified crisis management.</p>
+            `
+        };
+
+
+        function createTimelineEvent(event) {
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'timeline-event';
+            eventDiv.dataset.category = event.category.toLowerCase();
+
+            const timeEl = document.createElement('p');
+            timeEl.className = 'text-sm font-semibold text-gray-600';
+            timeEl.textContent = event.time;
+            eventDiv.appendChild(timeEl);
+
+            const titleEl = document.createElement('h4');
+            titleEl.className = 'text-lg font-semibold text-005A9C cursor-pointer';
+            titleEl.textContent = event.title;
+            eventDiv.appendChild(titleEl);
+
+            const detailsEl = document.createElement('div');
+            detailsEl.className = 'details-content text-sm text-gray-700';
+            detailsEl.innerHTML = `<p>${event.details}</p>`;
+            eventDiv.appendChild(detailsEl);
+            
+            titleEl.onclick = () => {
+                detailsEl.style.display = detailsEl.style.display === 'none' || detailsEl.style.display === '' ? 'block' : 'none';
+            };
+
+            return eventDiv;
+        }
+
+        function populateTimeline() {
+            const timelineContainer = document.getElementById('interactiveTimeline');
+            timelineContainer.innerHTML = ''; // Clear loading text
+            timelineData.forEach(event => {
+                timelineContainer.appendChild(createTimelineEvent(event));
+            });
+        }
+        
+        let currentFilter = 'all';
+        function filterTimeline(category, buttonElement) {
+            currentFilter = category.toLowerCase();
+            const events = document.querySelectorAll('#interactiveTimeline .timeline-event');
+            events.forEach(event => {
+                if (currentFilter === 'all' || event.dataset.category.includes(currentFilter)) {
+                    event.style.display = 'block';
+                } else {
+                    event.style.display = 'none';
+                }
+            });
+            document.querySelectorAll('.filter-button').forEach(btn => btn.classList.remove('active'));
+            if (buttonElement) buttonElement.classList.add('active');
+        }
+
+        function showFlightDetails(flightId) {
+            const detailsDiv = document.getElementById(`details-${flightId}`);
+            detailsDiv.innerHTML = flightDetailsData[flightId] || '<p>Details not available.</p>';
+            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        }
+        function showLocationDetails(locationId) {
+            const detailsDiv = document.getElementById(`details-${locationId}`);
+            detailsDiv.innerHTML = locationDetailsData[locationId] || '<p>Details not available.</p>';
+            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        }
+        function showResponseDetails(responseId) {
+            const detailsDiv = document.getElementById(`details-${responseId}`);
+            detailsDiv.innerHTML = responseDetailsData[responseId] || '<p>Details not available.</p>';
+            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function wrapChartLabel(label, maxLength = 16) {
+            if (typeof label !== 'string' || label.length <= maxLength) {
+                return label;
+            }
+            const words = label.split(' ');
+            const lines = [];
+            let currentLine = '';
+            for (const word of words) {
+                if ((currentLine + word).length > maxLength && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            }
+            lines.push(currentLine.trim());
+            return lines;
+        }
+        
+        const chartTooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                              return label.join(' ');
+                            } else {
+                              return label;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        function createCasualtiesChart() {
+            const ctx = document.getElementById('casualtiesByLocationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['New York City (WTC)', 'Pentagon', 'Flight 93 (Shanksville)'],
+                    datasets: [{
+                        label: 'Victims Killed (Excluding Hijackers)',
+                        data: [2753, 184, 40],
+                        backgroundColor: ['#005A9C', '#6C757D', '#C82333'],
+                        borderColor: ['#004080', '#545b62', '#a71d2a'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Number of Victims' }
+                        },
+                        x: {
+                             ticks: { callback: function(value) { return wrapChartLabel(this.getLabelForValue(value));} }
+                        }
+                    },
+                    ...chartTooltipConfig
+                }
+            });
+        }
+
+        function createNoradResponseChart() {
+            const ctx = document.getElementById('noradResponseChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [
+                        wrapChartLabel('AA11: NEADS Notified to Impact'), 
+                        wrapChartLabel('AA11: Fighters Airborne to Impact'),
+                        wrapChartLabel('UA175: NEADS Notified to Impact'), // Notified at impact
+                        wrapChartLabel('AA77: NEADS Aware to Impact'),
+                        wrapChartLabel('AA77: Fighters Airborne to Impact'),
+                        wrapChartLabel('UA93: NEADS Notified to Crash') // Notified after crash
+                    ],
+                    datasets: [{
+                        label: 'Time in Minutes',
+                        data: [
+                            9, // 8:37 AM to 8:46 AM
+                            -6, // 8:52 AM to 8:46 AM (airborne after impact)
+                            0, // 9:03 AM to 9:03 AM
+                            3, // 9:34 AM to 9:37 AM
+                            -7, // 9:30 AM to 9:37 AM (airborne but misdirected, then too late)
+                            -4  // 10:07 AM to 10:03 AM (notified after crash)
+                        ],
+                        backgroundColor: [
+                            '#005A9C', '#C82333', 
+                            '#6C757D',
+                            '#005A9C', '#C82333',
+                            '#6C757D'
+                        ],
+                        borderColor: '#212529',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Minutes (Negative means after event)' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    const item = tooltipItems[0];
+                                    let label = item.chart.data.labels[item.dataIndex];
+                                    return Array.isArray(label) ? label.join(' ') : label;
+                                },
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        if (context.parsed.x < 0) {
+                                            label += `${Math.abs(context.parsed.x)} mins after event`;
+                                        } else {
+                                            label += `${context.parsed.x} mins before event`;
+                                        }
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTimeline();
+            createCasualtiesChart();
+            createNoradResponseChart();
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section[id]');
+
+            function changeNavOnScroll() {
+                let index = sections.length;
+                while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+                
+                navLinks.forEach((link) => link.classList.remove('active'));
+                if (index >= 0 && navLinks[index]) { // Check if navLinks[index] exists
+                   const activeLink = document.querySelector(`.nav-link[href="#${sections[index].id}"]`);
+                   if (activeLink) activeLink.classList.add('active');
+                }
+            }
+            changeNavOnScroll(); // Initial call
+            window.addEventListener('scroll', changeNavOnScroll);
+        });
+
+    </script>
+</body>
+</html>

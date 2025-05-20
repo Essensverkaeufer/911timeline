@@ -46,39 +46,3 @@ Save the HTML code as an .html file (e.g., 911_timeline_spa.html).
 
 Open the file in any modern web browser.
 
-Structure Overview
-<head>: Contains metadata, links to Tailwind CSS, Chart.js, Google Fonts, and embedded CSS styles (including color palette definitions and responsive chart container styling). It also includes placeholder comments detailing design choices and constraint confirmations.
-
-<body>:
-
-Sticky Navigation Bar: Allows users to jump to different sections of the page.
-
-Main Content Container:
-
-Sections (<section>): Each section (Overview, Flights, Locations, etc.) is structured with a title and introductory text.
-
-Cards (<div class="card">): Used to group related information and visualizations.
-
-Interactive Elements:
-
-Filter buttons for the main timeline.
-
-"Show More Details" buttons that toggle the display of additional information.
-
-Chart Containers (<div class="chart-container">): Wraps <canvas> elements for Chart.js visualizations.
-
-<script>: Contains all JavaScript logic for:
-
-Data storage (timeline events, detailed descriptions).
-
-Dynamic timeline population and event creation.
-
-Filtering functionality for the timeline.
-
-Toggle functionality for expandable detail sections.
-
-Chart.js chart instantiation and configuration (including label wrapping and custom tooltips).
-
-Scroll-based active navigation link highlighting.
-
-The application is designed to present a somber and respectful account of the events, prioritizing clarity and ease of exploration for th

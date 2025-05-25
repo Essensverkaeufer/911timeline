@@ -345,6 +345,51 @@
             <p class="text-sm text-gray-600 mt-4 text-center">This chart illustrates the distribution of victim fatalities across the primary attack locations and Flight 93.</p>
         </section>
 
+        <!-- BEGIN: Transcripts & Voices Section -->
+        <section id="transcripts" class="mb-12 card">
+            <h2 class="section-title">Transcripts & Voices from 9/11</h2>
+            <p class="text-lg mb-6">Hear the words of those who experienced the attacks firsthand. These transcripts are from phone calls and radio transmissions made by people on the hijacked planes and in the towers. Click to read more of each transcript.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card" id="transcript-ong">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Betty Ong (Flight Attendant, AA11)</h3>
+                    <p class="text-sm text-gray-600 mb-1"><strong>Time:</strong> 8:19 AM</p>
+                    <p class="text-sm text-red-600 mb-1"><strong>Outcome:</strong> Perished in the crash of AA11 into the North Tower.</p>
+                    <button onclick="toggleTranscript('ong')" class="details-toggle mt-2">Show Transcript &rarr;</button>
+                    <div id="details-ong" class="details-content">
+                        <p><em>"The cockpit's not answering. Somebody's stabbed in business class—and I think there's mace that we can't breathe. I don't know, I think we're getting hijacked."</em></p>
+                    </div>
+                </div>
+                <div class="card" id="transcript-sweeney">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Brian Sweeney (Passenger, UA175)</h3>
+                    <p class="text-sm text-gray-600 mb-1"><strong>Time:</strong> 9:00 AM</p>
+                    <p class="text-sm text-red-600 mb-1"><strong>Outcome:</strong> Perished in the crash of UA175 into the South Tower.</p>
+                    <button onclick="toggleTranscript('sweeney')" class="details-toggle mt-2">Show Transcript &rarr;</button>
+                    <div id="details-sweeney" class="details-content">
+                        <p><em>"Jules, this is Brian. Listen, I'm on an airplane that's been hijacked. If things don't go well, and it's not looking good, I just want you to know I absolutely love you. I want you to do good, go have good times—same to my parents and everybody. And I just totally love you, and I'll see you when you get there. Bye, babe. I hope I call you."</em></p>
+                    </div>
+                </div>
+                <div class="card" id="transcript-cosgrove">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Kevin Cosgrove (WTC, 105th Floor, South Tower)</h3>
+                    <p class="text-sm text-gray-600 mb-1"><strong>Time:</strong> 9:59 AM</p>
+                    <p class="text-sm text-red-600 mb-1"><strong>Outcome:</strong> Perished in the collapse of the South Tower.</p>
+                    <button onclick="toggleTranscript('cosgrove')" class="details-toggle mt-2">Show Transcript &rarr;</button>
+                    <div id="details-cosgrove" class="details-content">
+                        <p><em>"My wife thinks I'm all right, I called and said I was leaving the building and that I was fine, and then—bang! [pause] ... We're not ready to die, but it's getting bad."</em></p>
+                    </div>
+                </div>
+                <div class="card" id="transcript-beamer">
+                    <h3 class="text-xl font-semibold mb-2 text-005A9C">Todd Beamer (Passenger, UA93)</h3>
+                    <p class="text-sm text-gray-600 mb-1"><strong>Time:</strong> 9:57 AM</p>
+                    <p class="text-sm text-red-600 mb-1"><strong>Outcome:</strong> Perished in the crash of UA93 in Shanksville, PA.</p>
+                    <button onclick="toggleTranscript('beamer')" class="details-toggle mt-2">Show Transcript &rarr;</button>
+                    <div id="details-beamer" class="details-content">
+                        <p><em>"Are you guys ready? Okay. Let's roll."</em></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- END: Transcripts & Voices Section -->
+
         <footer class="text-center text-sm text-gray-600 py-8 border-t border-gray-300">
             <p>This interactive timeline is based on publicly available information, primarily the 9/11 Commission Report and other official records.</p>
             <p>Created for informational and educational purposes.</p>
@@ -702,6 +747,12 @@
             });
         }
 
+        // BEGIN: Transcript toggle function
+        function toggleTranscript(transcriptId) {
+            const detailsDiv = document.getElementById(`details-${transcriptId}`);
+            detailsDiv.style.display = detailsDiv.style.display === 'block' ? 'none' : 'block';
+        }
+        // END: Transcript toggle function
 
         document.addEventListener('DOMContentLoaded', () => {
             populateTimeline();

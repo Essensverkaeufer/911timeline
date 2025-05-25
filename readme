@@ -1,48 +1,72 @@
-Interactive Timeline: September 11, 2001 Attacks SPA
-Objective
-This project is a single-page web application (SPA) designed to provide an interactive and detailed chronological account of the September 11, 2001 terrorist attacks. It aims to make the complex sequence of events, the responses, and key decisions easily explorable and understandable for users.
+# 🕒 Interactive Timeline: September 11, 2001 Attacks (SPA)
 
-Key Features
-Interactive Chronological Timeline: A filterable and sortable timeline of major events from 9/11. Users can click on events to expand and view more detailed information.
+## 🎯 Objective
 
-Thematic Sections: Dedicated sections provide in-depth information on:
+This project is a **single-page web application (SPA)** designed to provide an interactive and detailed chronological account of the **September 11, 2001 terrorist attacks**. 
+It aims to make the complex sequence of events, responses, and key decisions **easily explorable and understandable** for users.
 
-Overview of the attacks
+---
 
-The four hijacked flights (AA11, UA175, AA77, UA93)
+## ✨ Key Features
 
-The attack sites (World Trade Center, The Pentagon, Shanksville)
+### 🗓️ Interactive Chronological Timeline
+- A **filterable and sortable** timeline of major events from 9/11.
+- Users can **click on events** to expand and view more detailed information.
 
-National response (FAA, NORAD, White House & Leadership)
+### 📂 Thematic Sections
+Dedicated sections provide in-depth information on:
+- Overview of the attacks  
+- The four hijacked flights (`AA11`, `UA175`, `AA77`, `UA93`)  
+- The attack sites (World Trade Center, The Pentagon, Shanksville)  
+- National response (FAA, NORAD, White House & Leadership)  
+- Casualties and overall impact  
 
-Casualties and overall impact
+### 📊 Data Visualization
+- **Charts** (created with `Chart.js` and HTML Canvas) visualize:
+  - Casualty statistics by location
+  - FAA/NORAD notification and fighter scramble timeline gaps
 
-Data Visualization:
+### ⚙️ Dynamic Content
+- JavaScript powers:
+  - Timeline population
+  - Filtering
+  - Display of detailed flight, location, and response data
 
-Charts (created using Chart.js and HTML Canvas) display casualty statistics by location and visualize the FAA/NORAD notification and fighter scramble timeline gaps.
+### 📱 Responsive Design
+- Styled with **Tailwind CSS** for a seamless experience across:
+  - Desktop  
+  - Tablet  
+  - Mobile devices  
 
-Dynamic Content: JavaScript is used to populate the timeline, handle filtering, and manage the display of detailed information for flights, locations, and responses.
+### 🚫 No SVG/Mermaid
+- All graphics and diagrams are implemented using **HTML/CSS** or **HTML Canvas**, in adherence to project constraints.
 
-Responsive Design: The application is styled with Tailwind CSS to ensure a good user experience across various devices (desktop, tablet, mobile).
+---
 
-No SVG/Mermaid JS: All graphics and diagrams are implemented using HTML/CSS or HTML Canvas, adhering to specific project constraints.
+## 🧰 Technologies Used
 
-Technologies Used
-HTML5: For the structure and content of the web page.
+- **HTML5** – Structure and content  
+- **Tailwind CSS** – Utility-first styling (via CDN)  
+- **JavaScript (Vanilla)** – Application logic and interactivity  
+- **Chart.js** – Chart rendering (via CDN)
 
-Tailwind CSS: For utility-first styling and responsive design. (Loaded via CDN)
+---
 
-JavaScript (Vanilla): For core application logic, interactivity, dynamic content updates, and event handling.
+## 📚 Data Source
 
-Chart.js: For creating interactive and responsive charts. (Loaded via CDN)
+All data is derived from **publicly available records**, primarily:
+- The **9/11 Commission Report**
+- Other **official documentation** related to the events of September 11, 2001
 
-Data Source
-The information presented in this application is based on publicly available records, primarily the 9/11 Commission Report and other official documentation related to the events of September 11, 2001.
+---
 
-How to Use/View
-This is a self-contained single HTML file. To view and interact with the application:
+## ▶️ How to Use / View
 
-Save the HTML code as an .html file (e.g., 911_timeline_spa.html).
+This is a **self-contained single HTML file**.
 
-Open the file in any modern web browser.
+1. Save the code as an `.html` file, e.g., `911_timeline_spa.html`
+2. Open the file in any **modern web browser**
 
+---
+
+> ⚠️ This project is for educational and informational purposes only.
